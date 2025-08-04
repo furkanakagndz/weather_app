@@ -15,13 +15,25 @@ void main() {
     // Build our app and trigger a frame.
     await tester.pumpWidget(const WeatherApp());
 
-    // Verify that the weather app loads with search functionality
+    // Verify that the app loads with bottom navigation
+    expect(find.byType(BottomNavigationBar), findsOneWidget);
+    expect(find.text('Home'), findsOneWidget);
+    expect(find.text('Favorites'), findsOneWidget);
+    
+    // Verify that the weather app loads with search functionality on home tab
     expect(find.text('🌤️ Weather App'), findsOneWidget);
     expect(find.text('Enter city name'), findsOneWidget);
     expect(find.byIcon(Icons.search), findsOneWidget);
     
     // Verify that the search input field is present
     expect(find.byType(TextField), findsOneWidget);
+    
+    // Test bottom navigation
+    await tester.tap(find.text('Favorites'));
+    await tester.pumpAndSettle();
+    
+    // Should see favorites screen
+    expect(find.text('⭐ Favorite Cities'), findsOneWidget);
     
     // Note: The app will attempt to load Istanbul weather on startup
     // but we can't test the actual API call in widget tests without mocking

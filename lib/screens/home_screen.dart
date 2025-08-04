@@ -69,6 +69,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
+          // Favorite button
+          if (weatherAsync.value != null)
+            _buildFavoriteButton(weatherAsync.value!),
           // Refresh button
           if (weatherAsync.value != null)
             IconButton(
@@ -399,6 +402,52 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildFavoriteButton(Weather weather) {
+    final favoritesAsync = ref.watch(favoriteCitiesProvider);
+    
+    return favoritesAsync.when(
+      data: (favorites) {
+        final isFavorite = favorites.contains(weather.cityName);
+        
+        return IconButton(
+          icon: Icon(
+            isFavorite ? Icons.favorite : Icons.favorite_border,
+            color: Colors.white,
+          ),
+          onPressed: () {
+            if (isFavorite) {
+              ref.read(favoriteCitiesProvider.notifier).removeFavorite(weather.cityName);
+              _showSnackBar('${weather.cityName} removed from favorites');
+            } else {
+              ref.read(favoriteCitiesProvider.notifier).addFavorite(weather.cityName);
+              _showSnackBar('${weather.cityName} added to favorites');
+            }
+          },
+        );
+      },
+      loading: () => const IconButton(
+        icon: Icon(Icons.favorite_border, color: Colors.white),
+        onPressed: null,
+      ),
+      error: (error, stack) => const IconButton(
+        icon: Icon(Icons.favorite_border, color: Colors.white),
+        onPressed: null,
+      ),
+    );
+  }
+
+  void _showSnackBar(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   Color _getBackgroundColor(Weather? weather) {

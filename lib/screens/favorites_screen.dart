@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/weather_providers.dart';
-import '../widgets/weather_card.dart';
 
 /// Screen displaying favorite cities weather using Riverpod providers
 class FavoritesScreen extends ConsumerWidget {
@@ -25,6 +24,12 @@ class FavoritesScreen extends ConsumerWidget {
             onPressed: () {
               ref.invalidate(favoriteCitiesWeatherProvider);
             },
+            tooltip: 'Refresh weather data',
+          ),
+          IconButton(
+            icon: const Icon(Icons.add),
+            onPressed: () => _showAddFavoriteDialog(context, ref),
+            tooltip: 'Add favorite city',
           ),
         ],
       ),
@@ -101,10 +106,53 @@ class FavoritesScreen extends ConsumerWidget {
                   );
                 },
                 child: Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: WeatherCard.compact(
-                    weather: weather,
-                    margin: EdgeInsets.zero,
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Card(
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.all(16),
+                      leading: CircleAvatar(
+                        backgroundColor: _getWeatherColor(weather.main),
+                        child: Icon(
+                          _getWeatherIcon(weather.main),
+                          color: Colors.white,
+                        ),
+                      ),
+                      title: Text(
+                        '${weather.cityName}, ${weather.country}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 4),
+                          Text(
+                            '${weather.temperature.toStringAsFixed(1)}°C • ${weather.description}',
+                            style: const TextStyle(fontSize: 14),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Feels like ${weather.feelsLike.toStringAsFixed(1)}°C • ${weather.humidity}% humidity',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                        ],
+                      ),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.favorite, color: Colors.red),
+                        onPressed: () {
+                          // This will be handled by the dismissible action
+                        },
+                      ),
+                    ),
                   ),
                 ),
               );
@@ -156,10 +204,6 @@ class FavoritesScreen extends ConsumerWidget {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddFavoriteDialog(context, ref),
-        child: const Icon(Icons.add),
-      ),
     );
   }
 
@@ -202,5 +246,48 @@ class FavoritesScreen extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  Color _getWeatherColor(String weatherMain) {
+    switch (weatherMain.toLowerCase()) {
+      case 'clear':
+        return Colors.orange.shade400;
+      case 'clouds':
+        return Colors.grey.shade500;
+      case 'rain':
+      case 'drizzle':
+        return Colors.blue.shade600;
+      case 'thunderstorm':
+        return Colors.indigo.shade700;
+      case 'snow':
+        return Colors.blue.shade200;
+      case 'mist':
+      case 'fog':
+        return Colors.grey.shade400;
+      default:
+        return Colors.blue.shade500;
+    }
+  }
+
+  IconData _getWeatherIcon(String weatherMain) {
+    switch (weatherMain.toLowerCase()) {
+      case 'clear':
+        return Icons.wb_sunny;
+      case 'clouds':
+        return Icons.cloud;
+      case 'rain':
+        return Icons.grain;
+      case 'drizzle':
+        return Icons.grain;
+      case 'thunderstorm':
+        return Icons.flash_on;
+      case 'snow':
+        return Icons.ac_unit;
+      case 'mist':
+      case 'fog':
+        return Icons.cloud;
+      default:
+        return Icons.wb_sunny;
+    }
   }
 }
