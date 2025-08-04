@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'screens/home_screen.dart';
 
 void main() {
-  runApp(const WeatherApp());
+  runApp(
+    const ProviderScope(
+      child: WeatherApp(),
+    ),
+  );
 }
 
 class WeatherApp extends StatelessWidget {

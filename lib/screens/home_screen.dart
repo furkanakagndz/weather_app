@@ -1,28 +1,26 @@
 import 'package:flutter/material.dart';
-import '../services/weather_service.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/weather.dart';
 import '../widgets/weather_card.dart';
+import '../providers/weather_providers.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
-  final WeatherService _weatherService = WeatherService();
+class _HomeScreenState extends ConsumerState<HomeScreen> {
   final TextEditingController _cityController = TextEditingController();
-  
-  Weather? _weather;
-  bool _isLoading = false;
-  String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
-    // Load default city on app start
-    _getWeather('Istanbul');
+    // Load default city on app start using Riverpod
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _getWeather('Istanbul');
+    });
   }
 
   @override
@@ -33,43 +31,33 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _getWeather(String cityName) async {
     if (cityName.trim().isEmpty) {
-      setState(() {
-        _errorMessage = 'Please enter a city name';
-      });
+      ref.read(weatherErrorProvider.notifier).setError('Please enter a city name');
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-
-    try {
-      final weather = await _weatherService.getCurrentWeather(cityName.trim());
-      setState(() {
-        _weather = weather;
-        _errorMessage = null;
-      });
-    } catch (e) {
-      setState(() {
-        _errorMessage = e.toString().replaceFirst('WeatherException: ', '');
-        _weather = null;
-      });
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
-    }
+    // Update last searched city
+    ref.read(lastSearchedCityProvider.notifier).updateCity(cityName.trim());
+    
+    // Fetch weather using Riverpod provider
+    await ref.read(currentWeatherProvider.notifier).fetchWeather(cityName.trim());
   }
 
   void _onSearchPressed() {
     _getWeather(_cityController.text);
   }
 
+  void _onRefresh() async {
+    await ref.read(currentWeatherProvider.notifier).refresh();
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Watch the current weather provider
+    final weatherAsync = ref.watch(currentWeatherProvider);
+    final weatherError = ref.watch(weatherErrorProvider);
+
     return Scaffold(
-      backgroundColor: _getBackgroundColor(),
+      backgroundColor: _getBackgroundColor(weatherAsync.value),
       appBar: AppBar(
         title: const Text(
           '🌤️ Weather App',
@@ -80,18 +68,26 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        actions: [
+          // Refresh button
+          if (weatherAsync.value != null)
+            IconButton(
+              icon: const Icon(Icons.refresh, color: Colors.white),
+              onPressed: weatherAsync.isLoading ? null : _onRefresh,
+            ),
+        ],
       ),
       body: Container(
-        decoration: _getBackgroundDecoration(),
+        decoration: _getBackgroundDecoration(weatherAsync.value),
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
               children: [
-                _buildSearchSection(),
+                _buildSearchSection(weatherAsync.isLoading),
                 const SizedBox(height: 20),
                 Expanded(
-                  child: _buildWeatherContent(),
+                  child: _buildWeatherContent(weatherAsync, weatherError),
                 ),
               ],
             ),
@@ -101,7 +97,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildSearchSection() {
+  Widget _buildSearchSection(bool isLoading) {
     return Card(
       elevation: 8,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
@@ -122,14 +118,14 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(width: 8),
             ElevatedButton(
-              onPressed: _isLoading ? null : _onSearchPressed,
+              onPressed: isLoading ? null : _onSearchPressed,
               style: ElevatedButton.styleFrom(
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               ),
-              child: _isLoading
+              child: isLoading
                   ? const SizedBox(
                       width: 20,
                       height: 20,
@@ -143,9 +139,38 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildWeatherContent() {
-    if (_isLoading && _weather == null) {
-      return const Center(
+  Widget _buildWeatherContent(AsyncValue<Weather?> weatherAsync, String? weatherError) {
+    return weatherAsync.when(
+      data: (weather) {
+        if (weather != null) {
+          return _buildWeatherDisplay(weather);
+        } else if (weatherError != null) {
+          return _buildErrorDisplay(weatherError);
+        } else {
+          return const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.wb_sunny,
+                  size: 64,
+                  color: Colors.white,
+                ),
+                SizedBox(height: 16),
+                Text(
+                  'Enter a city name to get weather information',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          );
+        }
+      },
+      loading: () => const Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -163,64 +188,51 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
         ),
-      );
-    }
+      ),
+      error: (error, stackTrace) => _buildErrorDisplay(error.toString()),
+    );
+  }
 
-    if (_errorMessage != null) {
-      return Center(
-        child: Card(
-          color: Colors.red.shade100,
-          child: Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.error_outline,
-                  color: Colors.red,
-                  size: 48,
+  Widget _buildErrorDisplay(String errorMessage) {
+    return Center(
+      child: Card(
+        color: Colors.red.shade100,
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.error_outline,
+                color: Colors.red,
+                size: 48,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Oops! Something went wrong',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.red.shade700,
                 ),
-                const SizedBox(height: 16),
-                Text(
-                  'Oops! Something went wrong',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.red.shade700,
-                  ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                errorMessage.replaceFirst('WeatherException: ', ''),
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.red.shade600,
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  _errorMessage!,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.red.shade600,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: () => _getWeather(_cityController.text.isNotEmpty 
-                      ? _cityController.text 
-                      : 'Istanbul'),
-                  child: const Text('Try Again'),
-                ),
-              ],
-            ),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () => _getWeather(_cityController.text.isNotEmpty 
+                    ? _cityController.text 
+                    : 'Istanbul'),
+                child: const Text('Try Again'),
+              ),
+            ],
           ),
-        ),
-      );
-    }
-
-    if (_weather != null) {
-      return _buildWeatherDisplay(_weather!);
-    }
-
-    return const Center(
-      child: Text(
-        'Enter a city name to get weather information',
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 16,
         ),
       ),
     );
@@ -389,10 +401,10 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Color _getBackgroundColor() {
-    if (_weather == null) return Colors.blue.shade300;
+  Color _getBackgroundColor(Weather? weather) {
+    if (weather == null) return Colors.blue.shade300;
     
-    switch (_weather!.main.toLowerCase()) {
+    switch (weather.main.toLowerCase()) {
       case 'clear':
         return Colors.orange.shade300;
       case 'clouds':
@@ -412,14 +424,15 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  BoxDecoration _getBackgroundDecoration() {
+  BoxDecoration _getBackgroundDecoration(Weather? weather) {
+    final bgColor = _getBackgroundColor(weather);
     return BoxDecoration(
       gradient: LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
         colors: [
-          _getBackgroundColor(),
-          _getBackgroundColor().withValues(alpha: 0.7),
+          bgColor,
+          bgColor.withValues(alpha: 0.7),
         ],
       ),
     );
