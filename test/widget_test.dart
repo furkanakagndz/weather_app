@@ -1,4 +1,4 @@
-// This is a basic Flutter widget test.
+// This is a basic Flutter widget test for the Weather App.
 //
 // To perform an interaction with a widget in your test, use the WidgetTester
 // utility in the flutter_test package. For example, you can send tap and scroll
@@ -11,20 +11,16 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:weather_app/main.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
+  testWidgets('Weather app smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+    await tester.pumpWidget(const WeatherApp());
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
-
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    // Verify that the weather app loads with search functionality
+    expect(find.text('🌤️ Weather App'), findsOneWidget);
+    expect(find.text('Enter city name'), findsOneWidget);
+    expect(find.byIcon(Icons.search), findsOneWidget);
+    
+    // Verify that the search input field is present
+    expect(find.byType(TextField), findsOneWidget);
   });
 }
