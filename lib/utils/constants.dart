@@ -4,6 +4,7 @@ class WeatherConstants {
   
   // Default cities
   static const List<String> defaultCities = [
+    'Istanbul',
     'London',
     'New York',
     'Tokyo',

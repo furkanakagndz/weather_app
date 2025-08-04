@@ -42,7 +42,7 @@
 /// ## How to Use
 /// 
 /// ### Basic Usage:
-/// 1. Launch the app
+/// 1. Launch the app - Istanbul weather loads automatically
 /// 2. Enter a city name in the search field
 /// 3. Tap the search button or press Enter
 /// 4. View the comprehensive weather information
@@ -78,19 +78,19 @@
 /// 
 /// ## Example Weather Data Display:
 /// ```
-/// London, GB
+/// Istanbul, TR
 /// 2024-01-15
 /// 
-/// 15.2°C (59.4°F)
-/// CLEAR SKY
-/// Feels like 14.1°C
+/// 18.5°C (65.3°F)
+/// PARTLY CLOUDY
+/// Feels like 17.2°C
 /// 
-/// Humidity: 65%
-/// Wind: 3.2 m/s NW
-/// Pressure: 1015 hPa
-/// Visibility: 6.2 mi
+/// Humidity: 72%
+/// Wind: 2.8 m/s NE
+/// Pressure: 1018 hPa
+/// Visibility: 7.1 mi
 /// 
-/// Min: 12.1°C | Max: 18.3°C | Daytime
+/// Min: 14.3°C | Max: 21.2°C | Daytime
 /// ```
 /// 
 /// ## Code Examples
@@ -99,7 +99,7 @@
 /// ```dart
 /// final weatherService = WeatherService();
 /// try {
-///   Weather weather = await weatherService.getCurrentWeather('London');
+///   Weather weather = await weatherService.getCurrentWeather('Istanbul');
 ///   print('Temperature: ${weather.temperature}°C');
 /// } catch (e) {
 ///   print('Error: $e');

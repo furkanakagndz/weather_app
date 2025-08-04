@@ -7,8 +7,8 @@ class WeatherExample {
   /// Example: Get weather for a single city
   static Future<void> getSingleCityWeather() async {
     try {
-      print('Fetching weather for London...');
-      final weather = await _weatherService.getCurrentWeather('London');
+      print('Fetching weather for Istanbul...');
+      final weather = await _weatherService.getCurrentWeather('Istanbul');
       
       print('Weather Data:');
       print('City: ${weather.cityName}, ${weather.country}');
@@ -47,7 +47,7 @@ class WeatherExample {
   static Future<void> getMultipleCitiesWeather() async {
     try {
       print('Fetching weather for multiple cities...');
-      final cities = ['London', 'Paris', 'Tokyo', 'New York'];
+      final cities = ['Istanbul', 'London', 'Paris', 'Tokyo', 'New York'];
       final weatherList = await _weatherService.getWeatherForMultipleCities(cities);
       
       print('Weather data for ${weatherList.length} cities:');
@@ -96,6 +96,7 @@ class WeatherExample {
     // Check if API key is set
     if (!_weatherService.isApiKeySet) {
       print('Warning: API key is not properly configured!');
+      print('Please configure your API key in lib/utils/constants.dart');
       return;
     }
     

@@ -22,5 +22,8 @@ void main() {
     
     // Verify that the search input field is present
     expect(find.byType(TextField), findsOneWidget);
+    
+    // Note: The app will attempt to load Istanbul weather on startup
+    // but we can't test the actual API call in widget tests without mocking
   });
 }

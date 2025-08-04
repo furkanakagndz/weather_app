@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/weather_service.dart';
 import '../models/weather.dart';
+import '../widgets/weather_card.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -21,7 +22,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     // Load default city on app start
-    _getWeather('London');
+    _getWeather('Istanbul');
   }
 
   @override
@@ -200,7 +201,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ElevatedButton(
                   onPressed: () => _getWeather(_cityController.text.isNotEmpty 
                       ? _cityController.text 
-                      : 'London'),
+                      : 'Istanbul'),
                   child: const Text('Try Again'),
                 ),
               ],
@@ -229,101 +230,25 @@ class _HomeScreenState extends State<HomeScreen> {
     return SingleChildScrollView(
       child: Column(
         children: [
-          // Main weather card
+          // Main weather card using the reusable WeatherCard widget
+          WeatherCard(
+            weather: weather,
+            padding: const EdgeInsets.all(24.0),
+            margin: EdgeInsets.zero,
+          ),
+          
+          // Date display
           Card(
-            elevation: 12,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(24.0),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: _getWeatherGradient(weather.main),
+            elevation: 6,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            child: Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: Text(
+                'Last updated: ${weather.dateTime.toString().split(' ')[0]}',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey.shade600,
                 ),
-              ),
-              child: Column(
-                children: [
-                  Text(
-                    '${weather.cityName}, ${weather.country}',
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    weather.dateTime.toString().split(' ')[0], // Just the date
-                    style: const TextStyle(
-                      fontSize: 16,
-                      color: Colors.white70,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      Column(
-                        children: [
-                          Text(
-                            '${weather.temperature.toStringAsFixed(1)}°C',
-                            style: const TextStyle(
-                              fontSize: 48,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                          Text(
-                            '${weather.temperatureInFahrenheit.toStringAsFixed(1)}°F',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              color: Colors.white70,
-                            ),
-                          ),
-                        ],
-                      ),
-                      Column(
-                        children: [
-                          // Weather icon placeholder
-                          Container(
-                            width: 80,
-                            height: 80,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(40),
-                            ),
-                            child: const Icon(
-                              Icons.wb_sunny,
-                              size: 50,
-                              color: Colors.white,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            weather.description.toUpperCase(),
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.white,
-                              letterSpacing: 1.2,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    'Feels like ${weather.feelsLike.toStringAsFixed(1)}°C',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      color: Colors.white70,
-                    ),
-                  ),
-                ],
               ),
             ),
           ),
@@ -500,24 +425,5 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  List<Color> _getWeatherGradient(String weatherMain) {
-    switch (weatherMain.toLowerCase()) {
-      case 'clear':
-        return [Colors.orange.shade400, Colors.yellow.shade300];
-      case 'clouds':
-        return [Colors.grey.shade500, Colors.grey.shade300];
-      case 'rain':
-      case 'drizzle':
-        return [Colors.blue.shade600, Colors.blue.shade400];
-      case 'thunderstorm':
-        return [Colors.indigo.shade700, Colors.purple.shade400];
-      case 'snow':
-        return [Colors.blue.shade200, Colors.white];
-      case 'mist':
-      case 'fog':
-        return [Colors.grey.shade400, Colors.grey.shade200];
-      default:
-        return [Colors.blue.shade500, Colors.blue.shade300];
-    }
-  }
+
 }
